@@ -1,0 +1,32 @@
+{
+  "_comment": "Platform-neutral test vectors. Any port (e.g. Android) should pass these. Times are formatted to tenths of a second, rounded half away from zero.",
+  "paceToTime": [
+    { "name": "story 1: 400m at 5:45/mi", "paceSeconds": 345, "unit": "mi", "meters": 400, "expected": "1:25.7" },
+    { "name": "mile at 5:45/mi", "paceSeconds": 345, "unit": "mi", "meters": 1609.344, "expected": "5:45.0" },
+    { "name": "200m at 4:00/km", "paceSeconds": 240, "unit": "km", "meters": 200, "expected": "48.0" },
+    { "name": "marathon at 3:00/km", "paceSeconds": 180, "unit": "km", "meters": 42195, "expected": "2:06:35.1" }
+  ],
+  "timeToPace": [
+    { "name": "story 2: 800m in 2:45, per mile", "seconds": 165, "meters": 800, "unit": "mi", "expected": "5:31.9" },
+    { "name": "story 2: 800m in 2:45, per km", "seconds": 165, "meters": 800, "unit": "km", "expected": "3:26.3" },
+    { "name": "5k in 20:00, per mile", "seconds": 1200, "meters": 5000, "unit": "mi", "expected": "6:26.2" }
+  ],
+  "projection": [
+    { "name": "story 3: 5k in 14:34 to marathon", "seconds": 874, "meters": 5000, "targetMeters": 42195, "expected": "2:02:55.7" },
+    { "name": "10k in 31:00 to half", "seconds": 1860, "meters": 10000, "targetMeters": 21097.5, "expected": "1:05:24.1" }
+  ],
+  "speed": [
+    { "name": "6:00/mi in mph", "paceSeconds": 360, "paceUnit": "mi", "speedUnit": "mi", "expected": 10.0 },
+    { "name": "4:00/km in km/h", "paceSeconds": 240, "paceUnit": "km", "speedUnit": "km", "expected": 15.0 },
+    { "name": "6:00/mi in km/h", "paceSeconds": 360, "paceUnit": "mi", "speedUnit": "km", "expected": 16.09344 }
+  ],
+  "splitPoints": [
+    { "race": "m800", "splitType": "laps", "meters": [200, 400, 600, 800] },
+    { "race": "m1500", "splitType": "laps", "meters": [300, 700, 1100, 1500] },
+    { "race": "mile", "splitType": "laps", "meters": [409.344, 809.344, 1209.344, 1609.344] },
+    { "race": "m3000", "splitType": "laps", "meters": [200, 600, 1000, 1400, 1800, 2200, 2600, 3000] },
+    { "race": "road5k", "splitType": "mile", "meters": [1609.344, 3218.688, 4828.032, 5000] },
+    { "race": "half", "splitType": "km5", "meters": [5000, 10000, 15000, 20000, 21097.5] },
+    { "race": "marathon", "splitType": "km5", "meters": [5000, 10000, 15000, 20000, 21097.5, 25000, 30000, 35000, 40000, 42195] }
+  ]
+}
