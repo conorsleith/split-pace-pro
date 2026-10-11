@@ -180,3 +180,45 @@ struct RaceStoreTests {
         #expect(decoded == store)
     }
 }
+
+struct CalculationTests {
+    @Test func story1PaceThenDistance() {
+        var calc = Calculation(distance: PresetDistance.k5.distance, time: 1200)
+        calc.setPace(Pace(secondsPer: .mi, 345))
+        calc.distance = PresetDistance.m400.distance
+        #expect(calc.calculated == .time)
+        #expect(TimeFormat.string(calc.time) == "1:25.7")
+    }
+
+    @Test func story2DistanceThenTime() {
+        var calc = Calculation(distance: PresetDistance.k5.distance, time: 1200)
+        calc.distance = PresetDistance.m800.distance
+        calc.setTime(165)
+        #expect(calc.calculated == .pace)
+        #expect(TimeFormat.string(calc.pace.seconds(per: .mi)) == "5:31.9")
+    }
+
+    @Test func changingDistanceKeepsLastSetField() {
+        var calc = Calculation(distance: PresetDistance.k5.distance, time: 874)
+        calc.distance = PresetDistance.k10.distance
+        // Time was set last, so it stays and the pace slows.
+        #expect(calc.time == 874)
+
+        calc.setPace(Pace(secondsPer: .km, 180))
+        calc.distance = PresetDistance.k5.distance
+        // Pace was set last, so it stays and the time is recalculated.
+        #expect(TimeFormat.string(calc.time) == "15:00.0")
+    }
+
+    @Test func story3ProjectToMarathon() {
+        var calc = Calculation(distance: PresetDistance.k5.distance, time: 874)
+        calc.setDistanceKeepingPace(PresetDistance.marathon.distance)
+        #expect(calc.fixed == .pace)
+        #expect(TimeFormat.string(calc.time) == "2:02:55.7")
+    }
+
+    @Test func zeroTimeGivesNoPace() {
+        let calc = Calculation(distance: PresetDistance.k5.distance, time: 0)
+        #expect(calc.pace.secondsPerMeter == 0)
+    }
+}

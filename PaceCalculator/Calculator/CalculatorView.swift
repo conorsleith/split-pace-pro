@@ -1,13 +1,14 @@
 import PaceCore
 import SwiftUI
 
-enum CalculatorMode: String, CaseIterable {
-    case distanceTime
-    case pace
+/// The row being edited.
+enum CalculatorField: Hashable {
+    case distance, time, pace
 
-    var name: String {
+    var title: String {
         switch self {
-        case .distanceTime: "Distance + Time"
+        case .distance: "Distance"
+        case .time: "Time"
         case .pace: "Pace"
         }
     }
@@ -17,43 +18,41 @@ struct CalculatorView: View {
     @AppStorage("unit") private var unit: DistanceUnit = .mi
     @Environment(\.isWideLayout) private var isWide
 
-    @State private var mode: CalculatorMode = .distanceTime
-    @State private var paceInput = Pace(secondsPer: .mi, 360)
-    @State private var distance = PresetDistance.k5.distance
-    @State private var time: Double = 20 * 60
+    @State private var calc = Calculation(distance: PresetDistance.k5.distance, time: 20 * 60)
+    @State private var editing: CalculatorField?
     @State private var isCustomDistance = false
-
-    private var pace: Pace {
-        switch mode {
-        case .pace: paceInput
-        case .distanceTime: Pace(seconds: time, distance: distance)
-        }
-    }
 
     var body: some View {
         NavigationStack {
             Group {
                 if isWide {
                     HStack(spacing: 0) {
-                        Form { inputSections }
-                            .frame(minWidth: 340, idealWidth: 400, maxWidth: 460)
+                        Form {
+                            fieldRows
+                            if let editing {
+                                Section(editing.title) { editor(for: editing) }
+                            }
+                        }
+                        .frame(minWidth: 340, idealWidth: 400, maxWidth: 460)
                         Divider()
-                        SplitsTable(pace: pace, highlighted: highlightedDistance, onSelect: select)
+                        SplitsTable(pace: calc.pace, highlighted: calc.distance, onSelect: selectSplit)
                     }
                 } else {
                     Form {
-                        inputSections
-                        SplitsTable.Rows(pace: pace, highlighted: highlightedDistance, onSelect: select)
+                        fieldRows
+                        SplitsTable.Rows(pace: calc.pace, highlighted: calc.distance, onSelect: selectSplit)
                     }
-                    // Keep the answer on screen while spinning the wheels.
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        result
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 8)
-                            .background(.bar)
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        if let editing {
+                            EditorPanel(title: editing.title, onDone: { self.editing = nil }) {
+                                editor(for: editing)
+                            }
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
                     }
                 }
             }
+            .animation(.snappy(duration: 0.25), value: editing)
             .navigationTitle("Pace")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -66,104 +65,157 @@ struct CalculatorView: View {
         }
     }
 
-    @ViewBuilder
-    private var inputSections: some View {
+    // MARK: Rows
+
+    private var fieldRows: some View {
         Section {
-            Picker("Input", selection: $mode) {
-                ForEach(CalculatorMode.allCases, id: \.self) { m in
-                    Text(m.name).tag(m)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .onChange(of: mode) { old, new in
-                // Carry the current pace across so switching modes never loses it.
-                if new == .pace {
-                    let carried = Pace(seconds: time, distance: distance)
-                    if carried.isValid { paceInput = carried }
-                } else if paceInput.isValid {
-                    time = paceInput.time(for: distance)
-                }
-            }
-        }
-
-        switch mode {
-        case .pace:
-            Section("Pace per \(unit.rawValue)") {
-                DurationInput(seconds: paceSecondsBinding, showsHours: false)
-            }
-        case .distanceTime:
-            Section("Distance") {
-                DistancePicker(distance: $distance, isCustom: $isCustomDistance, unit: unit)
-            }
-            Section("Time") {
-                DurationInput(seconds: $time)
-            }
-        }
-
-        if isWide {
-            Section { result }
+            FieldRow(
+                title: "Distance",
+                value: distanceText,
+                isEditing: editing == .distance,
+                isCalculated: false,
+                action: { toggle(.distance) }
+            )
+            FieldRow(
+                title: "Time",
+                value: timeText(calc.time),
+                isEditing: editing == .time,
+                isCalculated: calc.calculated == .time,
+                action: { toggle(.time) }
+            )
+            FieldRow(
+                title: "Pace",
+                value: paceText(unit),
+                suffix: unit.paceSuffix,
+                detail: "\(paceText(unit.other)) \(unit.other.paceSuffix) · \(speedText)",
+                isEditing: editing == .pace,
+                isCalculated: calc.calculated == .pace,
+                action: { toggle(.pace) }
+            )
         }
     }
 
-    private var result: some View {
-        ResultView(pace: pace, unit: unit, showsPrimaryPace: mode == .distanceTime)
+    private func toggle(_ field: CalculatorField) {
+        editing = editing == field ? nil : field
     }
 
-    private var paceSecondsBinding: Binding<Double> {
-        Binding(
-            get: { paceInput.seconds(per: unit) },
-            set: { paceInput = Pace(secondsPer: unit, $0) }
-        )
-    }
-
-    private var highlightedDistance: Distance? {
-        mode == .distanceTime ? distance : nil
-    }
-
-    /// Tapping a split makes it the input distance, keeping the current pace.
-    private func select(_ newDistance: Distance) {
-        let current = pace
-        guard current.isValid else { return }
-        distance = newDistance
-        isCustomDistance = PresetDistance(distance: newDistance) == nil
-        time = current.time(for: newDistance)
-        mode = .distanceTime
-    }
-}
-
-/// Pace in both units plus treadmill speed.
-private struct ResultView: View {
-    var pace: Pace
-    var unit: DistanceUnit
-    var showsPrimaryPace: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if showsPrimaryPace {
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(paceText(unit))
-                        .font(.system(size: 44, weight: .semibold).monospacedDigit())
-                    Text(unit.paceSuffix).font(.title3).foregroundStyle(.secondary)
-                }
-            }
-            HStack(spacing: 16) {
-                Text("\(paceText(unit.other)) \(unit.other.paceSuffix)")
-                Text(speedText)
-            }
-            .font(showsPrimaryPace ? .body.monospacedDigit() : .title3.monospacedDigit())
-            .foregroundStyle(.secondary)
+    private var distanceText: String {
+        if let preset = PresetDistance(distance: calc.distance) {
+            return preset.name
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
+        return String(format: "%.2f %@", calc.distance.value(in: unit), unit.rawValue)
     }
 
     private func paceText(_ unit: DistanceUnit) -> String {
-        pace.isValid ? TimeFormat.string(pace.seconds(per: unit)) : "—"
+        calc.pace.isValid ? TimeFormat.string(calc.pace.seconds(per: unit)) : "—"
     }
 
     private var speedText: String {
-        guard pace.isValid else { return "— \(unit.speedLabel)" }
-        return String(format: "%.1f %@", pace.speed(in: unit), unit.speedLabel)
+        guard calc.pace.isValid else { return "— \(unit.speedLabel)" }
+        return String(format: "%.1f %@", calc.pace.speed(in: unit), unit.speedLabel)
+    }
+
+    // MARK: Editors
+
+    @ViewBuilder
+    private func editor(for field: CalculatorField) -> some View {
+        switch field {
+        case .distance:
+            DistancePicker(distance: $calc.distance, isCustom: $isCustomDistance, unit: unit)
+        case .time:
+            DurationInput(seconds: timeBinding)
+        case .pace:
+            DurationInput(seconds: paceBinding, showsHours: false)
+        }
+    }
+
+    private var timeBinding: Binding<Double> {
+        Binding(get: { calc.time }, set: { calc.setTime($0) })
+    }
+
+    private var paceBinding: Binding<Double> {
+        Binding(
+            get: { calc.pace.seconds(per: unit) },
+            set: { calc.setPace(Pace(secondsPer: unit, $0)) }
+        )
+    }
+
+    /// Tapping a split makes it the distance, keeping the current pace.
+    private func selectSplit(_ distance: Distance) {
+        guard calc.pace.isValid else { return }
+        calc.setDistanceKeepingPace(distance)
+        isCustomDistance = PresetDistance(distance: distance) == nil
+    }
+}
+
+/// A tappable label/value row. The calculated value is shown in the accent
+/// colour so it's always clear which number is the answer.
+private struct FieldRow: View {
+    var title: String
+    var value: String
+    var suffix: String? = nil
+    var detail: String? = nil
+    var isEditing: Bool
+    var isCalculated: Bool
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).foregroundStyle(.secondary)
+                    if isCalculated {
+                        Text("calculated")
+                            .font(.caption)
+                            .foregroundStyle(Color.accentColor)
+                    }
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(value)
+                            .font(.title.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(isCalculated ? Color.accentColor : Color.primary)
+                        if let suffix {
+                            Text(suffix).foregroundStyle(.secondary)
+                        }
+                    }
+                    if let detail {
+                        Text(detail)
+                            .font(.footnote.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(isEditing ? Color.accentColor.opacity(0.15) : nil)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(isCalculated ? "Calculated. Double-tap to edit." : "Double-tap to edit.")
+    }
+}
+
+/// Bottom panel that holds the input for the row being edited, in the
+/// place a keyboard would appear.
+private struct EditorPanel<Content: View>: View {
+    var title: String
+    var onDone: () -> Void
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Text(title).font(.headline)
+                Spacer()
+                Button("Done", action: onDone).fontWeight(.semibold)
+            }
+            content
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .background(.regularMaterial, in: UnevenRoundedRectangle(topLeadingRadius: 16, topTrailingRadius: 16))
+        .shadow(color: .black.opacity(0.12), radius: 8, y: -2)
     }
 }

@@ -24,15 +24,22 @@ User stories:
 Layout, top to bottom:
 
 1. **Unit toggle** mi / km
-2. **Input mode** segmented control:
-   - **Pace** — wheels: min : sec . tenths, per mi or km
-   - **Distance + Time** — distance picker + wheels: h : min : sec . tenths
-3. **Result**: pace in selected unit (large), other unit (small), speed in mph or km/h (for treadmills). On iPhone it is pinned to the top of the screen so it stays visible while spinning.
-4. **Splits table**: time at current pace for every preset distance. The input distance is highlighted. Tapping a row sets it as the input distance.
+2. **Three rows: Distance, Time, Pace.** Pace also shows the other unit and speed in mph or km/h (for treadmills).
+3. **Splits table**: time at the current pace for every preset distance. The current distance is highlighted. Tapping a row moves to that distance at the current pace.
+
+**Editing:** tapping a row opens an input panel at the bottom of the screen, where a keyboard would appear (inline in the left column on iPad/macOS). Tapping another row switches the panel; tapping the same row or Done closes it.
+
+- **Distance:** preset buttons; "Custom" adds whole + hundredths wheels in km or mi below them.
+- **Time:** h : mm : ss . t wheels.
+- **Pace:** m : ss . t wheels, per mi or km.
+
+**Which value is calculated:** distance is always an input. Of time and pace, whichever was set most recently stays fixed and the other is calculated (shown in the accent colour with a "calculated" label). Changing distance recalculates the non-fixed one. Tapping a split row fixes the pace. This rule lives in `PaceCore/Calculation.swift`.
+
+- Story 1: set pace 5:45, pick 400m → time 1:25.7.
+- Story 2: pick 800m, set time 2:45 → pace 5:31.9/mi.
+- Story 3: pick 5k, set time 14:34 → marathon row shows 2:02:55.7.
 
 **Preset distances:** 200m, 400m, 800m, 1000m, 1500m, 1mi, 3000m, 5k, 10k, 15k, 10mi, half marathon, marathon, 50k.
-
-**Custom distance:** whole + hundredths wheels in km or mi (e.g. 3.00 mi, 1.50 km).
 
 ## Tab 2 — Race
 
