@@ -1,0 +1,4 @@
+<resources>
+    <!-- Also themes the NumberPicker wheels, which are platform views. -->
+    <style name="Theme.Pace" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

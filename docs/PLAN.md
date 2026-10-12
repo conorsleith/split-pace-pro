@@ -98,9 +98,16 @@ All races (type, split type, label, recorded splits, selected split point) plus 
 - **iPhone:** primary target. Single column.
 - **iPad:** same app. Regular width → input on the left, table on the right.
 - **macOS:** native SwiftUI (not Catalyst). Number fields instead of wheels; same two-column layout as iPad.
-- **Android (maybe someday):** native Kotlin/Compose port. No shared logic code; `PaceCore/Tests/fixtures.json` holds input→expected-output test vectors so a port can be checked against the same cases.
+- **Android:** native Kotlin + Jetpack Compose app in `android/` (see below).
 
 Minimums: iOS 17, macOS 14.
+
+## Android
+
+- `android/core`: pure Kotlin port of PaceCore (no Android dependencies). Its tests run the same `PaceCore/Tests/PaceCoreTests/fixtures.json` vectors as iOS, plus ports of the iOS unit tests.
+- `android/app`: Compose UI mirroring iOS. Wheels are the platform `NumberPicker` (wrap-around for minutes/seconds/tenths). Unit and last tab in SharedPreferences; races in `races.json` in app storage, written after every change.
+- Differences from iOS: a recorded split is cleared with long-press (or the Clear button) rather than swipe; single-column layout on tablets.
+- Build: `cd android && ./gradlew assembleRelease` (needs `JAVA_HOME` set to a JDK 17+, e.g. Android Studio's bundled one). The release APK is signed with the local debug key for sharing with testers; set up a real keystore before any Play Store release.
 
 ## Architecture
 
