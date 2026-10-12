@@ -27,9 +27,9 @@ Layout, top to bottom:
 2. **Three rows: Distance, Time, Pace.** Pace also shows the other unit and speed in mph or km/h (for treadmills).
 3. **Splits table**: time at the current pace for every preset distance. The current distance is highlighted. Tapping a row moves to that distance at the current pace.
 
-**Editing:** tapping a row opens an input panel at the bottom of the screen, where a keyboard would appear (inline in the left column on iPad/macOS). Tapping another row switches the panel; tapping the same row or Done closes it.
+**Editing:** tapping a row opens its input directly under the three rows, pushing the splits table down. This keeps the wheels mid-screen where the thumb rests and away from the bottom edge, where a downward drag on a wheel would trigger iOS Reachability (an earlier bottom-panel design had that problem). Tapping another row switches the input; tapping the same row or Done closes it.
 
-- **Distance:** preset buttons; "Custom" adds whole + hundredths wheels in km or mi below them.
+- **Distance:** preset buttons; "Custom" adds whole + hundredths wheels below them, plus a third two-value mi / km wheel (remembered, and separate from the pace unit so you can enter e.g. 15 km while seeing pace per mile). Spinning the unit wheel converts the numbers shown; the distance only changes when a number wheel is spun.
 - **Time:** h : mm : ss . t wheels.
 - **Pace:** m : ss . t wheels, per mi or km.
 

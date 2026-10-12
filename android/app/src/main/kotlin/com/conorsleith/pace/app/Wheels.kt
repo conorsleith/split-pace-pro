@@ -28,9 +28,14 @@ data class NumberColumn(
     val separator: String? = null,
     /** Wheel wraps around (59 → 00), like a timer. */
     val wraps: Boolean = false,
+    /** Text shown for each value instead of the number, e.g. ["mi", "km"]. */
+    val labels: List<String>? = null,
     val description: String,
 ) {
-    fun text(value: Int) = value.toString().padStart(digits, '0')
+    /** Wider column for two-digit numbers and text labels. */
+    val isWide: Boolean get() = digits > 1 || labels != null
+
+    fun text(value: Int) = labels?.get(value - range.first) ?: value.toString().padStart(digits, '0')
 }
 
 /** A row of spinner wheels with fixed separators between them. */
@@ -56,7 +61,7 @@ fun NumberColumnsInput(columns: List<NumberColumn>, values: List<Int>, onChange:
 @Composable
 private fun Wheel(column: NumberColumn, value: Int, onValueChange: (Int) -> Unit) {
     AndroidView(
-        modifier = Modifier.width(if (column.digits > 1) 64.dp else 52.dp),
+        modifier = Modifier.width(if (column.isWide) 64.dp else 52.dp),
         factory = { context ->
             NumberPicker(context).apply {
                 // Spin only; never pop up a keyboard.
@@ -103,17 +108,29 @@ fun DurationInput(seconds: Double, showsHours: Boolean = true, onChange: (Double
     }
 }
 
-/** Distance entry as whole . hundredths in the given unit. */
+/**
+ * Distance entry as whole . hundredths, with a third mi / km wheel.
+ * Spinning the unit wheel converts the numbers shown; the distance itself
+ * only changes when a number wheel is spun.
+ */
 @Composable
-fun DecimalDistanceInput(distance: Distance, unit: DistanceUnit, onChange: (Distance) -> Unit) {
+fun DecimalDistanceInput(
+    distance: Distance,
+    unit: DistanceUnit,
+    onUnitChange: (DistanceUnit) -> Unit,
+    onChange: (Distance) -> Unit,
+) {
+    val units = listOf(DistanceUnit.MI, DistanceUnit.KM)
     val hundredths = Math.round(distance.valueIn(unit) * 100).toInt()
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
-        NumberColumnsInput(
-            columns = listOf(
-                NumberColumn(0..200, separator = ".", description = if (unit == DistanceUnit.MI) "miles" else "kilometers"),
-                NumberColumn(0..99, digits = 2, wraps = true, description = "hundredths"),
-            ),
-            values = listOf(minOf(200, hundredths / 100), hundredths % 100),
-        ) { v -> onChange(Distance(v[0] + v[1] / 100.0, unit)) }
+    NumberColumnsInput(
+        columns = listOf(
+            NumberColumn(0..200, separator = ".", description = if (unit == DistanceUnit.MI) "miles" else "kilometers"),
+            NumberColumn(0..99, digits = 2, wraps = true, separator = " ", description = "hundredths"),
+            NumberColumn(0..1, labels = units.map { it.label }, description = "unit"),
+        ),
+        values = listOf(minOf(200, hundredths / 100), hundredths % 100, units.indexOf(unit)),
+    ) { v ->
+        val newUnit = units[v[2]]
+        if (newUnit != unit) onUnitChange(newUnit) else onChange(Distance(v[0] + v[1] / 100.0, unit))
     }
 }

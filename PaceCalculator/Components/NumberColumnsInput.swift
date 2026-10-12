@@ -9,9 +9,15 @@ struct NumberColumn: Hashable {
     var separator: String? = nil
     /// Wheel wraps around (59 → 00), like the system timer picker.
     var wraps = false
+    /// Text shown for each value instead of the number, e.g. ["mi", "km"].
+    var labels: [String]? = nil
     var accessibilityLabel: String
 
+    /// Wider column for two-digit numbers and text labels.
+    var isWide: Bool { digits > 1 || labels != nil }
+
     func text(_ value: Int) -> String {
+        if let labels { return labels[value - range.lowerBound] }
         let s = String(value)
         return String(repeating: "0", count: max(0, digits - s.count)) + s
     }
@@ -56,7 +62,7 @@ private struct NumberField: View {
             .labelsHidden()
             .multilineTextAlignment(.center)
             .font(.title2.monospacedDigit())
-            .frame(width: column.digits > 1 ? 48 : 36)
+            .frame(width: column.isWide ? 48 : 36)
             .textFieldStyle(.roundedBorder)
             .accessibilityLabel(column.accessibilityLabel)
     }
@@ -144,7 +150,7 @@ private struct WheelPicker: UIViewRepresentable {
 
         func pickerView(_ pickerView: UIPickerView, widthForComponent component: Int) -> CGFloat {
             switch parent.components[component] {
-            case .number(let col): parent.columns[col].digits > 1 ? 64 : 48
+            case .number(let col): parent.columns[col].isWide ? 64 : 48
             case .separator: 14
             }
         }

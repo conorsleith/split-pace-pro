@@ -16,6 +16,9 @@ enum CalculatorField: Hashable {
 
 struct CalculatorView: View {
     @AppStorage("unit") private var unit: DistanceUnit = .mi
+    /// Unit for entering a custom distance, separate from the pace unit so
+    /// you can enter e.g. 15 km while seeing pace per mile.
+    @AppStorage("customDistanceUnit") private var customUnit: DistanceUnit = .mi
     @Environment(\.isWideLayout) private var isWide
 
     @State private var calc = Calculation(distance: PresetDistance.k5.distance, time: 20 * 60)
@@ -29,9 +32,7 @@ struct CalculatorView: View {
                     HStack(spacing: 0) {
                         Form {
                             fieldRows
-                            if let editing {
-                                Section(editing.title) { editor(for: editing) }
-                            }
+                            editorSection
                         }
                         .frame(minWidth: 340, idealWidth: 400, maxWidth: 460)
                         Divider()
@@ -40,15 +41,8 @@ struct CalculatorView: View {
                 } else {
                     Form {
                         fieldRows
+                        editorSection
                         SplitsTable.Rows(pace: calc.pace, highlighted: calc.distance, onSelect: selectSplit)
-                    }
-                    .safeAreaInset(edge: .bottom, spacing: 0) {
-                        if let editing {
-                            EditorPanel(title: editing.title, onDone: { self.editing = nil }) {
-                                editor(for: editing)
-                            }
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                        }
                     }
                 }
             }
@@ -95,6 +89,26 @@ struct CalculatorView: View {
         }
     }
 
+    /// The input for the row being edited, directly under the rows: mid-screen
+    /// where the thumb rests, and away from the bottom edge, where a downward
+    /// drag on a wheel would trigger Reachability.
+    @ViewBuilder
+    private var editorSection: some View {
+        if let editing {
+            Section {
+                editor(for: editing)
+            } header: {
+                HStack {
+                    Text(editing.title)
+                    Spacer()
+                    Button("Done") { self.editing = nil }
+                        .fontWeight(.semibold)
+                        .textCase(nil)
+                }
+            }
+        }
+    }
+
     private func toggle(_ field: CalculatorField) {
         editing = editing == field ? nil : field
     }
@@ -103,7 +117,7 @@ struct CalculatorView: View {
         if let preset = PresetDistance(distance: calc.distance) {
             return preset.name
         }
-        return String(format: "%.2f %@", calc.distance.value(in: unit), unit.rawValue)
+        return String(format: "%.2f %@", calc.distance.value(in: customUnit), customUnit.rawValue)
     }
 
     private func paceText(_ unit: DistanceUnit) -> String {
@@ -121,7 +135,7 @@ struct CalculatorView: View {
     private func editor(for field: CalculatorField) -> some View {
         switch field {
         case .distance:
-            DistancePicker(distance: $calc.distance, isCustom: $isCustomDistance, unit: unit)
+            DistancePicker(distance: $calc.distance, isCustom: $isCustomDistance, customUnit: $customUnit)
         case .time:
             DurationInput(seconds: timeBinding)
         case .pace:
@@ -193,29 +207,5 @@ private struct FieldRow: View {
         .listRowBackground(isEditing ? Color.accentColor.opacity(0.15) : nil)
         .accessibilityElement(children: .combine)
         .accessibilityHint(isCalculated ? "Calculated. Double-tap to edit." : "Double-tap to edit.")
-    }
-}
-
-/// Bottom panel that holds the input for the row being edited, in the
-/// place a keyboard would appear.
-private struct EditorPanel<Content: View>: View {
-    var title: String
-    var onDone: () -> Void
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        VStack(spacing: 8) {
-            HStack {
-                Text(title).font(.headline)
-                Spacer()
-                Button("Done", action: onDone).fontWeight(.semibold)
-            }
-            content
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
-        .background(.regularMaterial, in: UnevenRoundedRectangle(topLeadingRadius: 16, topTrailingRadius: 16))
-        .shadow(color: .black.opacity(0.12), radius: 8, y: -2)
     }
 }

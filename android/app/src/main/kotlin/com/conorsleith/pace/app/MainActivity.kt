@@ -60,6 +60,12 @@ class AppState(context: Context) {
     )
         private set
 
+    /** Unit for entering a custom distance, separate from the pace unit. */
+    var customDistanceUnit by mutableStateOf(
+        runCatching { DistanceUnit.valueOf(prefs.getString("customDistanceUnit", null)!!) }.getOrDefault(DistanceUnit.MI)
+    )
+        private set
+
     var tab by mutableStateOf(
         runCatching { AppTab.valueOf(prefs.getString("tab", null)!!) }.getOrDefault(AppTab.CALCULATOR)
     )
@@ -73,6 +79,11 @@ class AppState(context: Context) {
     fun updateUnit(value: DistanceUnit) {
         unit = value
         prefs.edit().putString("unit", value.name).apply()
+    }
+
+    fun updateCustomDistanceUnit(value: DistanceUnit) {
+        customDistanceUnit = value
+        prefs.edit().putString("customDistanceUnit", value.name).apply()
     }
 
     fun updateTab(value: AppTab) {
@@ -110,7 +121,7 @@ fun PaceApp(state: AppState) {
     ) { padding ->
         val modifier = Modifier.padding(padding)
         when (state.tab) {
-            AppTab.CALCULATOR -> CalculatorScreen(state.unit, state::updateUnit, modifier)
+            AppTab.CALCULATOR -> CalculatorScreen(state.unit, state::updateUnit, state.customDistanceUnit, state::updateCustomDistanceUnit, modifier)
             AppTab.RACE -> RaceScreen(state.races, state::updateRaces, state.unit, state::updateUnit, modifier)
         }
     }

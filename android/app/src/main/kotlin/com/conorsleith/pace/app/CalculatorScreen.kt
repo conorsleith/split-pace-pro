@@ -1,9 +1,6 @@
 package com.conorsleith.pace.app
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,11 +16,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -51,7 +48,13 @@ enum class CalculatorField(val title: String) { DISTANCE("Distance"), TIME("Time
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalculatorScreen(unit: DistanceUnit, onUnitChange: (DistanceUnit) -> Unit, modifier: Modifier = Modifier) {
+fun CalculatorScreen(
+    unit: DistanceUnit,
+    onUnitChange: (DistanceUnit) -> Unit,
+    customUnit: DistanceUnit,
+    onCustomUnitChange: (DistanceUnit) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     var calc by remember { mutableStateOf(Calculation(PresetDistance.K5.distance, 20 * 60.0)) }
     var editing by rememberSaveable { mutableStateOf<CalculatorField?>(null) }
     var isCustomDistance by rememberSaveable { mutableStateOf(false) }
@@ -66,7 +69,7 @@ fun CalculatorScreen(unit: DistanceUnit, onUnitChange: (DistanceUnit) -> Unit, m
                 Card(shape = RoundedCornerShape(16.dp)) {
                     FieldRow(
                         title = "Distance",
-                        value = distanceText(calc.distance, unit),
+                        value = distanceText(calc.distance, customUnit),
                         isEditing = editing == CalculatorField.DISTANCE,
                         isCalculated = false,
                     ) { editing = toggle(editing, CalculatorField.DISTANCE) }
@@ -88,6 +91,23 @@ fun CalculatorScreen(unit: DistanceUnit, onUnitChange: (DistanceUnit) -> Unit, m
                     ) { editing = toggle(editing, CalculatorField.PACE) }
                 }
             }
+            // The input for the row being edited, directly under the rows:
+            // mid-screen where the thumb rests, away from the bottom edge.
+            editing?.let { field ->
+                item(key = "editor") {
+                    EditorCard(field.title, onDone = { editing = null }) {
+                        when (field) {
+                            CalculatorField.DISTANCE -> DistancePicker(calc.distance, isCustomDistance, customUnit, onCustomUnitChange,
+                                onCustomChange = { isCustomDistance = it },
+                                onChange = { calc = calc.withDistance(it) })
+                            CalculatorField.TIME -> DurationInput(calc.time) { calc = calc.withTime(it) }
+                            CalculatorField.PACE -> DurationInput(calc.pace.secondsPer(unit), showsHours = false) {
+                                calc = calc.withPace(Pace.per(unit, it))
+                            }
+                        }
+                    }
+                }
+            }
             item { SectionHeader("Splits") }
             items(splitRows(calc.distance), key = { it.distance.meters }) { row ->
                 SplitTableRow(row, calc.pace) {
@@ -99,26 +119,6 @@ fun CalculatorScreen(unit: DistanceUnit, onUnitChange: (DistanceUnit) -> Unit, m
                 }
             }
             item { Spacer(Modifier.padding(bottom = 16.dp)) }
-        }
-
-        // The input for the row being edited, where a keyboard would appear.
-        AnimatedVisibility(
-            visible = editing != null,
-            enter = slideInVertically { it },
-            exit = slideOutVertically { it },
-        ) {
-            val field = editing ?: return@AnimatedVisibility
-            EditorPanel(field.title, onDone = { editing = null }) {
-                when (field) {
-                    CalculatorField.DISTANCE -> DistancePicker(calc.distance, isCustomDistance, unit,
-                        onCustomChange = { isCustomDistance = it },
-                        onChange = { calc = calc.withDistance(it) })
-                    CalculatorField.TIME -> DurationInput(calc.time) { calc = calc.withTime(it) }
-                    CalculatorField.PACE -> DurationInput(calc.pace.secondsPer(unit), showsHours = false) {
-                        calc = calc.withPace(Pace.per(unit, it))
-                    }
-                }
-            }
         }
     }
 }
@@ -221,6 +221,7 @@ private fun DistancePicker(
     distance: Distance,
     isCustom: Boolean,
     unit: DistanceUnit,
+    onUnitChange: (DistanceUnit) -> Unit,
     onCustomChange: (Boolean) -> Unit,
     onChange: (Distance) -> Unit,
 ) {
@@ -240,23 +241,21 @@ private fun DistancePicker(
             }
         }
         if (isCustom) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) { DecimalDistanceInput(distance, unit, onChange) }
-                Text(unit.label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            DecimalDistanceInput(distance, unit, onUnitChange, onChange)
         }
     }
 }
 
-/** Bottom panel holding the input for the row being edited. */
+/** Card holding the input for the row being edited. */
 @Composable
-private fun EditorPanel(title: String, onDone: () -> Unit, content: @Composable () -> Unit) {
-    Surface(
-        tonalElevation = 3.dp,
-        shadowElevation = 8.dp,
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+private fun EditorCard(title: String, onDone: () -> Unit, content: @Composable () -> Unit) {
+    // Lighter than the rows card, so the distance buttons stand out against it.
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
     ) {
-        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 8.dp)) {
+        Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 TextButton(onClick = onDone) { Text("Done", fontWeight = FontWeight.SemiBold) }

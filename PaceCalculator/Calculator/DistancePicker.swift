@@ -5,7 +5,7 @@ import SwiftUI
 struct DistancePicker: View {
     @Binding var distance: Distance
     @Binding var isCustom: Bool
-    var unit: DistanceUnit
+    @Binding var customUnit: DistanceUnit
 
     private let grid = [GridItem(.adaptive(minimum: 58), spacing: 6)]
 
@@ -23,7 +23,7 @@ struct DistancePicker: View {
                 }
             }
             if isCustom {
-                DecimalDistanceInput(distance: $distance, unit: unit)
+                DecimalDistanceInput(distance: $distance, unit: $customUnit)
             }
         }
         .padding(.vertical, 4)

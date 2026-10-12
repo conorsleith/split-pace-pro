@@ -44,32 +44,39 @@ struct DurationInput: View {
     }
 }
 
-/// Distance entry as whole . hundredths in the given unit.
+/// Distance entry as whole . hundredths, with a third mi / km wheel.
+/// Spinning the unit wheel converts the numbers shown; the distance itself
+/// only changes when a number wheel is spun.
 struct DecimalDistanceInput: View {
     @Binding var distance: Distance
-    var unit: DistanceUnit
+    @Binding var unit: DistanceUnit
+
+    private static let units: [DistanceUnit] = [.mi, .km]
 
     var body: some View {
-        HStack(spacing: 8) {
-            NumberColumnsInput(
-                columns: [
-                    NumberColumn(range: 0...200, separator: ".", accessibilityLabel: unit == .mi ? "miles" : "kilometers"),
-                    NumberColumn(range: 0...99, digits: 2, wraps: true, accessibilityLabel: "hundredths"),
-                ],
-                values: values
-            )
-            Text(unit.rawValue).font(.title3).foregroundStyle(.secondary)
-        }
+        NumberColumnsInput(
+            columns: [
+                NumberColumn(range: 0...200, separator: ".", accessibilityLabel: unit == .mi ? "miles" : "kilometers"),
+                NumberColumn(range: 0...99, digits: 2, wraps: true, accessibilityLabel: "hundredths"),
+                NumberColumn(range: 0...1, labels: Self.units.map(\.rawValue), accessibilityLabel: "unit"),
+            ],
+            values: values
+        )
     }
 
     private var values: Binding<[Int]> {
         Binding(
             get: {
                 let hundredths = Int((distance.value(in: unit) * 100).rounded())
-                return [min(200, hundredths / 100), hundredths % 100]
+                return [min(200, hundredths / 100), hundredths % 100, Self.units.firstIndex(of: unit) ?? 0]
             },
             set: { v in
-                distance = Distance(Double(v[0]) + Double(v[1]) / 100, unit)
+                let newUnit = Self.units[v[2]]
+                if newUnit != unit {
+                    unit = newUnit
+                } else {
+                    distance = Distance(Double(v[0]) + Double(v[1]) / 100, unit)
+                }
             }
         )
     }
