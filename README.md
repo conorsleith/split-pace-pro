@@ -64,3 +64,11 @@ Split Pace Pro doesn't collect, store or share any personal data. There are no a
 - **Android:** Kotlin + Jetpack Compose in `android/`. Build with `./gradlew assembleRelease` (requires JDK 17+, e.g. Android Studio's bundled one).
 
 Both platforms are checked against the same test cases in `PaceCore/Tests/PaceCoreTests/fixtures.json`. See [docs/PLAN.md](docs/PLAN.md) for the design.
+
+## License
+
+Split Pace Pro is free, and should stay that way. You're welcome to use it, read and learn from the code, change it for yourself, and share it — as long as it's not for commercial purposes. That means you can't sell it, sell a copy or clone of it, or put ads in it.
+
+The full terms are the [PolyForm Noncommercial License 1.0.0](LICENSE.md).
+
+Required Notice: Copyright 2026 Conor Sleith (https://github.com/conorsleith/split-pace-pro)
