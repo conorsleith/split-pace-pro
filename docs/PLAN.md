@@ -1,4 +1,6 @@
-# Pace Calculator — Plan
+# Split Pace Pro — Plan
+
+Shown as **Split Pace Pro** on the home screen. iOS bundle ID `com.conorsleith.SplitPacePro` (App Store Connect name SplitPacePro); Android application ID `com.conorsleith.pace`.
 
 ## Goals
 
@@ -108,6 +110,12 @@ Minimums: iOS 17, macOS 14.
 - `android/app`: Compose UI mirroring iOS. Wheels are the platform `NumberPicker` (wrap-around for minutes/seconds/tenths). Unit and last tab in SharedPreferences; races in `races.json` in app storage, written after every change.
 - Differences from iOS: a recorded split is cleared with long-press (or the Clear button) rather than swipe; single-column layout on tablets.
 - Build: `cd android && ./gradlew assembleRelease` (needs `JAVA_HOME` set to a JDK 17+, e.g. Android Studio's bundled one). The release APK is signed with the local debug key for sharing with testers; set up a real keystore before any Play Store release.
+
+## Distribution
+
+- **iOS:** TestFlight. Run `scripts/testflight.sh` to archive and upload a build with the Apple ID signed into Xcode; build numbers come from the UTC date/time. Testers are managed in App Store Connect → TestFlight.
+- **Android:** share the APK from `cd android && ./gradlew assembleRelease`, bumping `versionCode`/`versionName` in `android/app/build.gradle.kts` for each release so it installs as an update.
+- **App icon:** `scripts/make-icon.swift` renders the iOS/macOS icon (white stopwatch on #1A73E8), matching the Android adaptive icon.
 
 ## Architecture
 
