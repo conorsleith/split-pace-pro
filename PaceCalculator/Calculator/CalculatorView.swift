@@ -21,8 +21,8 @@ struct CalculatorView: View {
     @AppStorage("customDistanceUnit") private var customUnit: DistanceUnit = .mi
     @Environment(\.isWideLayout) private var isWide
 
-    @State private var calc = Calculation(distance: PresetDistance.k5.distance, time: 20 * 60)
-    @State private var editing: CalculatorField?
+    @State private var calc = Demo.calculation ?? Calculation(distance: PresetDistance.k5.distance, time: 20 * 60)
+    @State private var editing: CalculatorField? = Demo.editing
     @State private var isCustomDistance = false
 
     var body: some View {
@@ -208,4 +208,24 @@ private struct FieldRow: View {
         .accessibilityElement(children: .combine)
         .accessibilityHint(isCalculated ? "Calculated. Double-tap to edit." : "Double-tap to edit.")
     }
+}
+
+/// Example values for screenshots: launch a Debug build with `-demo` to
+/// open on 400m at 5:45/mi with the pace input showing. Release builds
+/// always start from the defaults.
+private enum Demo {
+    #if DEBUG
+    static let isEnabled = ProcessInfo.processInfo.arguments.contains("-demo")
+    #else
+    static let isEnabled = false
+    #endif
+
+    static var calculation: Calculation? {
+        guard isEnabled else { return nil }
+        var calc = Calculation(distance: PresetDistance.m400.distance, time: 0)
+        calc.setPace(Pace(secondsPer: .mi, 345))
+        return calc
+    }
+
+    static var editing: CalculatorField? { isEnabled ? .pace : nil }
 }

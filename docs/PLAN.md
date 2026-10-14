@@ -115,6 +115,7 @@ Minimums: iOS 17, macOS 14.
 
 - **iOS:** TestFlight. Run `scripts/testflight.sh` to archive and upload a build with the Apple ID signed into Xcode; build numbers come from the UTC date/time. Testers are managed in App Store Connect → TestFlight.
 - **Android:** share the APK from `cd android && ./gradlew assembleRelease`, bumping `versionCode`/`versionName` in `android/app/build.gradle.kts` for each release so it installs as an update.
+- **Screenshots:** launch a Debug build with the `-demo` argument (e.g. `xcrun simctl launch <device> com.conorsleith.SplitPacePro -demo`) to open the calculator on 400m at 5:45/mi with the pace input showing. Release builds ignore it.
 - **App icon:** `scripts/make-icon.swift` renders the iOS/macOS icon (white stopwatch on #1A73E8), matching the Android adaptive icon.
 
 ## Architecture

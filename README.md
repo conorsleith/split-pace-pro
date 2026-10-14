@@ -1,9 +1,11 @@
+<img src="PaceCalculator/Assets.xcassets/AppIcon.appiconset/icon-1024.png" alt="Split Pace Pro icon" width="96">
+
 # Split Pace Pro
 
-A fast, no-fuss pace calculator for runners and race fans, for iPhone, iPad, Mac and Android. Scroll to set your distance and time (no typing) and get your answer instantly. Then follow live races split by split with projected finish times.
+A fast, no-fuss pace calculator for runners and race fans, for iPhone, iPad and Android. Scroll to set your distance and time (no typing) and get your answer instantly. Then follow live races split by split with projected finish times.
 
 <p>
-  <img src="docs/screenshots/iphone-calculator.png" alt="Calculator: distance, time and calculated pace, with times for every common distance" width="260">
+  <img src="docs/screenshots/iphone-calculator.png" alt="Calculator: 400m at 5:45 per mile is 1:25.7, with the pace being set and times for every common distance below" width="260">
   <img src="docs/screenshots/iphone-race.png" alt="Race mode: following the men's and women's marathons, with projected finish times" width="260">
   <img src="docs/screenshots/android-race.png" alt="Race mode on Android" width="260">
 </p>
@@ -40,7 +42,7 @@ Follow a race live, split by split:
 
 ## Support
 
-Found a bug, have a question, or want to suggest a feature? [Open an issue](../../issues) on this repository, and include your device and what you were doing if something went wrong.
+Found a bug, have a question, or want to suggest a feature? Email **[multi-uplands-4p@icloud.com](mailto:multi-uplands-4p@icloud.com)**, or [open an issue](../../issues) on this repository if you have a GitHub account. If something went wrong, include your device and what you were doing.
 
 ### Common questions
 
@@ -56,11 +58,13 @@ Found a bug, have a question, or want to suggest a feature? [Open an issue](../.
 
 ## Privacy
 
+_Last updated: October 14, 2026_
+
 Split Pace Pro doesn't collect, store or share any personal data. There are no accounts, ads, analytics or tracking, and the app makes no network connections. Your settings and saved races stay on your device and are removed when you delete the app.
 
 ## Building from source
 
-- **iOS / iPadOS / macOS:** SwiftUI app. The Xcode project is generated with [XcodeGen](https://github.com/yonaskolb/XcodeGen): run `xcodegen generate`, then open `PaceCalculator.xcodeproj`. The calculation logic lives in the `PaceCore` Swift package (`swift test` in `PaceCore/`).
+- **iOS / iPadOS / macOS:** SwiftUI app (the Mac version is only available by building from source). The Xcode project is generated with [XcodeGen](https://github.com/yonaskolb/XcodeGen): run `xcodegen generate`, then open `PaceCalculator.xcodeproj`. The calculation logic lives in the `PaceCore` Swift package (`swift test` in `PaceCore/`).
 - **Android:** Kotlin + Jetpack Compose in `android/`. Build with `./gradlew assembleRelease` (requires JDK 17+, e.g. Android Studio's bundled one).
 
 Both platforms are checked against the same test cases in `PaceCore/Tests/PaceCoreTests/fixtures.json`. See [docs/PLAN.md](docs/PLAN.md) for the design.
